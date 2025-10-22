@@ -2,12 +2,15 @@ using Dapper;
 using Microsoft.Data.SqlClient;
 using NotesApi.Data;
 using NotesApi.Repositories;
+using NotesApi.Services;
+using NotesApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHealthChecks();
 
 // CORS
 const string CorsPolicyName = "DefaultCors";
@@ -36,6 +39,10 @@ builder.Services.AddSingleton<DatabaseInitializer>();
 // Repositories
 builder.Services.AddScoped<INotesRepository, NotesRepository>();
 
+// User context
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUserContext, UserContext>();
+
 var app = builder.Build();
 
 app.UseCors(CorsPolicyName);
@@ -48,7 +55,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Global exception handler
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 // Ensure database/table exist
 await app.Services.GetRequiredService<DatabaseInitializer>().EnsureCreatedAsync();

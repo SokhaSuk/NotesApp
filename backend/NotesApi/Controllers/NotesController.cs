@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using NotesApi.Models;
 using NotesApi.Repositories;
+using NotesApi.Services;
 
 namespace NotesApi.Controllers;
 
@@ -9,26 +10,18 @@ namespace NotesApi.Controllers;
 public sealed class NotesController : ControllerBase
 {
     private readonly INotesRepository _repository;
+    private readonly IUserContext _userContext;
 
-    public NotesController(INotesRepository repository)
+    public NotesController(INotesRepository repository, IUserContext userContext)
     {
         _repository = repository;
-    }
-
-    private string? GetUserId()
-    {
-        // For junior version: use header X-User-Id; Auth optional
-        if (Request.Headers.TryGetValue("X-User-Id", out var values))
-        {
-            return values.FirstOrDefault();
-        }
-        return null;
+        _userContext = userContext;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetNotes([FromQuery] string? search, [FromQuery] string? sortBy, [FromQuery] string? sortDir)
     {
-        var userId = GetUserId();
+        var userId = _userContext.UserId;
         if (string.IsNullOrWhiteSpace(userId)) return Unauthorized("Missing X-User-Id header");
         var notes = await _repository.GetNotesAsync(userId, search, sortBy, sortDir);
         return Ok(notes.Select(n => new
@@ -43,7 +36,7 @@ public sealed class NotesController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetNote(Guid id)
     {
-        var userId = GetUserId();
+        var userId = _userContext.UserId;
         if (string.IsNullOrWhiteSpace(userId)) return Unauthorized("Missing X-User-Id header");
         var note = await _repository.GetNoteAsync(userId, id);
         if (note is null) return NotFound();
@@ -56,7 +49,7 @@ public sealed class NotesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateNoteRequest request)
     {
-        var userId = GetUserId();
+        var userId = _userContext.UserId;
         if (string.IsNullOrWhiteSpace(userId)) return Unauthorized("Missing X-User-Id header");
         if (string.IsNullOrWhiteSpace(request.Title)) return BadRequest("Title is required");
 
@@ -73,7 +66,7 @@ public sealed class NotesController : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateNoteRequest request)
     {
-        var userId = GetUserId();
+        var userId = _userContext.UserId;
         if (string.IsNullOrWhiteSpace(userId)) return Unauthorized("Missing X-User-Id header");
         if (string.IsNullOrWhiteSpace(request.Title)) return BadRequest("Title is required");
 
@@ -89,7 +82,7 @@ public sealed class NotesController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var userId = GetUserId();
+        var userId = _userContext.UserId;
         if (string.IsNullOrWhiteSpace(userId)) return Unauthorized("Missing X-User-Id header");
         var ok = await _repository.DeleteNoteAsync(userId, id);
         if (!ok) return NotFound();
