@@ -10,7 +10,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Configure database
-builder.Services.AddSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")!);
+builder.Services.AddDatabase(builder.Configuration.GetConnectionString("DefaultConnection")!);
 
 // Configure repositories
 builder.Services.AddRepositories();
@@ -31,6 +31,13 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Initialize database
+using (var scope = app.Services.CreateScope())
+{
+    var databaseInitializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+    await databaseInitializer.InitializeAsync();
+}
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

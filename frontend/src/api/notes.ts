@@ -1,5 +1,5 @@
 import { httpClient } from './http'
-import type { Note, CreateNoteRequest, UpdateNoteRequest, NotesResponse, NoteFilters } from '@/types/note'
+import type { Note, CreateNoteRequest, UpdateNoteRequest, NotesResponse, NoteFilters, User } from '@/types/note'
 
 export class NotesApi {
   static async getNotes(filters?: NoteFilters): Promise<NotesResponse> {

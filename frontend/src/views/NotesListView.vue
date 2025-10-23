@@ -1,143 +1,160 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-8">
     <!-- Header -->
-    <div class="flex justify-between items-center">
-      <h1 class="text-3xl font-bold text-gray-900">My Notes</h1>
-      <router-link to="/notes/create" class="btn-primary">
-        Create Note
+    <div class="text-center space-y-4">
+      <h1 class="text-5xl font-bold text-gradient mb-4">
+        My Notes
+      </h1>
+      <p class="text-gray-600 text-lg max-w-2xl mx-auto">
+        Capture your thoughts, ideas, and memories in one beautiful place
+      </p>
+      <router-link to="/notes/create" class="btn-primary inline-flex items-center">
+        Create New Note
       </router-link>
     </div>
 
     <!-- Search and Filters -->
-    <div class="card">
+    <div class="card max-w-4xl mx-auto">
       <div class="flex flex-col sm:flex-row gap-4">
         <!-- Search -->
         <div class="flex-1">
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search notes..."
-            class="input-field"
-            @input="handleSearch"
-          />
+          <div class="relative">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search your notes..."
+              class="input-field pl-4"
+              @input="handleSearch"
+            />
+          </div>
         </div>
 
         <!-- Sort Options -->
-        <div class="flex gap-2">
-          <select
-            v-model="sortBy"
-            @change="handleSort"
-            class="input-field"
-          >
-            <option value="createdAt">Date Created</option>
-            <option value="updatedAt">Date Updated</option>
-            <option value="title">Title</option>
-          </select>
+        <div class="flex gap-3">
+          <div class="relative">
+            <select
+              v-model="sortBy"
+              @change="handleSort"
+              class="input-field bg-white/50 backdrop-blur-sm"
+            >
+              <option value="createdAt">Date Created</option>
+              <option value="updatedAt">Date Updated</option>
+              <option value="title">Title</option>
+            </select>
+          </div>
 
-          <select
-            v-model="sortOrder"
-            @change="handleSort"
-            class="input-field"
-          >
-            <option value="desc">Descending</option>
-            <option value="asc">Ascending</option>
-          </select>
+          <div class="relative">
+            <select
+              v-model="sortOrder"
+              @change="handleSort"
+              class="input-field bg-white/50 backdrop-blur-sm"
+            >
+              <option value="desc">Descending</option>
+              <option value="asc">Ascending</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="flex justify-center py-8">
+    <div v-if="loading" class="flex justify-center py-12">
       <LoadingSpinner />
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="card">
-      <div class="text-red-600 text-center">
-        <p>{{ error }}</p>
-        <button @click="fetchNotes" class="btn-secondary mt-2">
+    <div v-else-if="error" class="card max-w-2xl mx-auto">
+      <div class="text-center">
+        <h3 class="text-xl font-semibold text-red-600 mb-4">Oops! Something went wrong</h3>
+        <p class="text-gray-600 mb-6">{{ error }}</p>
+        <button @click="fetchNotes" class="btn-primary">
           Try Again
         </button>
       </div>
     </div>
 
     <!-- Notes List -->
-    <div v-else-if="notes.length > 0" class="space-y-4">
+    <div v-else-if="notes.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
         v-for="note in notes"
         :key="note.id"
-        class="card hover:shadow-lg transition-shadow cursor-pointer"
+        class="note-card group"
         @click="viewNote(note.id)"
       >
-        <div class="flex justify-between items-start">
+        <div class="flex justify-between items-start mb-4">
           <div class="flex-1">
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">
-              {{ note.title }}
-            </h3>
-            <p v-if="note.content" class="text-gray-600 line-clamp-2 mb-3">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-3 h-3 rounded-full bg-gradient-to-r from-blue-600 to-blue-800"></div>
+              <h3 class="text-xl font-bold text-gray-900 group-hover:text-gradient transition-all duration-300">
+                {{ note.title }}
+              </h3>
+            </div>
+            <p v-if="note.content" class="text-gray-600 line-clamp-2 mb-4 leading-relaxed">
               {{ note.content }}
             </p>
-            <div class="text-sm text-gray-500">
-              <span>Created: {{ formatDate(note.createdAt) }}</span>
-              <span v-if="note.updatedAt !== note.createdAt" class="ml-4">
-                Updated: {{ formatDate(note.updatedAt) }}
+            <div class="flex items-center gap-4 text-sm text-gray-500">
+              <span>
+                Created {{ formatDate(note.createdAt) }}
+              </span>
+              <span v-if="note.updatedAt !== note.createdAt">
+                Updated {{ formatDate(note.updatedAt) }}
               </span>
             </div>
           </div>
-          <div class="flex gap-2 ml-4">
-            <button
-              @click.stop="editNote(note.id)"
-              class="btn-secondary text-sm"
-            >
-              Edit
-            </button>
-            <button
-              @click.stop="deleteNote(note)"
-              class="btn-danger text-sm"
-            >
-              Delete
-            </button>
-          </div>
         </div>
-      </div>
 
-      <!-- Pagination -->
-      <div class="flex justify-center mt-6" v-if="totalPages > 1">
-        <div class="flex gap-2">
+        <div class="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <button
-            @click="changePage(currentPage - 1)"
-            :disabled="currentPage === 1"
-            class="btn-secondary"
+            @click.stop="editNote(note.id)"
+            class="btn-secondary text-sm flex-1"
           >
-            Previous
+            Edit
           </button>
-
-          <span class="flex items-center px-4 text-gray-600">
-            Page {{ currentPage }} of {{ totalPages }}
-          </span>
-
           <button
-            @click="changePage(currentPage + 1)"
-            :disabled="currentPage === totalPages"
-            class="btn-secondary"
+            @click.stop="deleteNote(note)"
+            class="btn-danger text-sm flex-1"
           >
-            Next
+            Delete
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Empty State -->
-    <div v-else class="card">
-      <div class="text-center py-12">
-        <div class="text-gray-400 mb-4">
-          <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
+    <!-- Pagination -->
+    <div class="flex justify-center mt-12" v-if="totalPages > 1">
+      <div class="flex items-center gap-4 bg-white/50 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
+        <button
+          @click="changePage(currentPage - 1)"
+          :disabled="currentPage === 1"
+          class="btn-ghost disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Previous
+        </button>
+
+        <div class="flex items-center gap-2">
+          <span class="px-4 py-2 bg-white/80 rounded-xl font-semibold text-gray-700">
+            {{ currentPage }} of {{ totalPages }}
+          </span>
         </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No notes yet</h3>
-        <p class="text-gray-500 mb-4">Get started by creating your first note.</p>
-        <router-link to="/notes/create" class="btn-primary">
+
+        <button
+          @click="changePage(currentPage + 1)"
+          :disabled="currentPage === totalPages"
+          class="btn-ghost disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else class="card max-w-2xl mx-auto">
+      <div class="text-center py-16">
+        <h3 class="text-2xl font-bold text-gray-900 mb-4">No notes yet!</h3>
+        <p class="text-gray-600 mb-8 text-lg leading-relaxed max-w-md mx-auto">
+          Your creative space is waiting. Start capturing your thoughts, ideas, and inspirations with your first note.
+        </p>
+        <router-link to="/notes/create" class="btn-primary text-lg inline-flex items-center">
           Create Your First Note
         </router-link>
       </div>
@@ -159,9 +176,8 @@ const sortBy = ref<'title' | 'createdAt' | 'updatedAt'>('createdAt')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 
 const { notes, loading, error, filters, totalCount, fetchNotes } = notesStore
-const currentPage = computed(() => filters.page || 1)
-const totalPages = computed(() => Math.ceil(totalCount.value / (filters.pageSize || 10)))
-
+const currentPage = computed(() => filters?.page || 1)
+const totalPages = computed(() => Math.ceil(totalCount / (filters?.pageSize || 10)))
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -210,11 +226,3 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style>

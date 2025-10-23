@@ -1,14 +1,17 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using NotesApi.Data;
 using NotesApi.Repositories;
 using NotesApi.Services;
+using System.Text;
 
 namespace NotesApi.Extensions;
 
 public static class ServiceExtensions
 {
-    public static void AddSqlServer(this IServiceCollection services, string connectionString)
+    public static void AddDatabase(this IServiceCollection services, string connectionString)
     {
-        services.AddSingleton(new SqlConnectionFactory(connectionString));
+        services.AddSingleton(new DatabaseConnectionFactory(connectionString));
         services.AddSingleton<DatabaseInitializer>();
     }
 

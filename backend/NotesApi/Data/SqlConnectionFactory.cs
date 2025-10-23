@@ -1,18 +1,18 @@
-using System.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 
 namespace NotesApi.Data;
 
-public class SqlConnectionFactory
+public class DatabaseConnectionFactory
 {
     private readonly string _connectionString;
 
-    public SqlConnectionFactory(string connectionString)
+    public DatabaseConnectionFactory(string connectionString)
     {
         _connectionString = connectionString;
     }
 
-    public SqlConnection CreateConnection()
+    public SqliteConnection CreateSqliteConnection()
     {
-        return new SqlConnection(_connectionString);
+        return new SqliteConnection(_connectionString);
     }
 }

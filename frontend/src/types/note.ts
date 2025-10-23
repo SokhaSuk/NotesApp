@@ -5,6 +5,14 @@ export interface Note {
   createdAt: string
   updatedAt: string
   userId: number
+  user: User
+}
+
+export interface User {
+  id: number
+  username: string
+  email: string
+  createdAt: string
 }
 
 export interface CreateNoteRequest {

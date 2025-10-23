@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios'
-import type { ApiResponse, ApiError } from '@/types/api'
+import type { ApiResponse, ApiError, BackendErrorResponse } from '@/types/api'
 
 class HttpClient {
   private instance: AxiosInstance
@@ -46,11 +46,22 @@ class HttpClient {
 
   async request<T>(method: string, url: string, data?: any): Promise<ApiResponse<T>> {
     try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.instance.request({
+      const response: AxiosResponse<any> = await this.instance.request({
         method,
         url,
         data,
       })
+
+      // Transform backend response format to frontend format
+      if (response.data.Data !== undefined) {
+        return {
+          data: response.data.Data,
+          message: response.data.Message || '',
+          success: response.data.Success !== false,
+        }
+      }
+
+      // If already in frontend format, return as is
       return response.data
     } catch (error: any) {
       throw this.handleError(error)
@@ -59,10 +70,16 @@ class HttpClient {
 
   private handleError(error: any): ApiError {
     if (error.response?.data) {
-      return {
-        message: error.response.data.message || 'An error occurred',
-        errors: error.response.data.errors,
+      const data = error.response.data as BackendErrorResponse
+
+      // Handle backend ErrorResponse format
+      if (data.Message) {
+        return {
+          message: data.Message,
+          errors: data.Errors,
+        }
       }
+
     }
     return {
       message: error.message || 'Network error occurred',

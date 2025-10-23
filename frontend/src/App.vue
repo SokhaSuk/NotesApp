@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="min-h-screen bg-gray-50">
+  <div id="app" class="min-h-screen">
     <NavBar v-if="isAuthenticated" />
     <main class="container mx-auto px-4 py-8">
       <router-view />

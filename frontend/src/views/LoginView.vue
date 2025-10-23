@@ -1,60 +1,77 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Sign in to your account
+  <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="form-container p-8 space-y-8 w-full">
+      <div class="text-center">
+        <div class="flex justify-center">
+          <img src="@/assets/images/Logo.jpg" alt="Logo" class="w-16 h-16 rounded-full">
+        </div>
+        <h2 class="text-3xl font-bold text-gradient mb-2">
+          Welcome to TechBodia!
         </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
-          Or
-          <router-link to="/register" class="font-medium text-blue-600 hover:text-blue-500">
-            create a new account
+        <p class="text-gray-600 mb-8">
+          Sign in to your account to start taking notes
+        </p>
+        <p class="text-sm text-gray-500">
+          Don't have an account?
+          <router-link
+            to="/register"
+            class="font-semibold text-gradient hover:underline ml-1 transition-all duration-300"
+          >
+            Create one here
           </router-link>
         </p>
       </div>
 
-      <form @submit.prevent="handleLogin" class="mt-8 space-y-6">
-        <div class="rounded-md shadow-sm -space-y-px">
+      <form @submit.prevent="handleLogin" class="space-y-6">
+        <div class="space-y-4">
           <div>
-            <label for="username" class="sr-only">Username</label>
+            <label for="username" class="block text-sm font-semibold text-gray-700 mb-2">
+              Username
+            </label>
             <input
               id="username"
               name="username"
               type="text"
               required
               v-model="form.username"
-              class="input-field rounded-t-md"
-              placeholder="Username"
+              class="input-field"
+              placeholder="Enter your username"
               :disabled="loading"
             />
           </div>
           <div>
-            <label for="password" class="sr-only">Password</label>
+            <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">
+              Password
+            </label>
             <input
               id="password"
               name="password"
               type="password"
               required
               v-model="form.password"
-              class="input-field rounded-b-md"
-              placeholder="Password"
+              class="input-field"
+              placeholder="Enter your password"
               :disabled="loading"
             />
           </div>
         </div>
 
-        <div v-if="error" class="text-red-600 text-sm text-center">
-          {{ error }}
+        <div v-if="error" class="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div class="flex items-center">
+            <span class="text-red-700 text-sm font-medium">{{ error }}</span>
+          </div>
         </div>
 
         <div>
           <button
             type="submit"
-            class="btn-primary w-full"
+            class="btn-primary w-full text-lg"
             :disabled="loading"
           >
-            <LoadingSpinner v-if="loading" />
-            <span v-else>Sign in</span>
+            <LoadingSpinner v-if="loading" class="mx-auto" />
+            <span v-else class="flex items-center justify-center">
+              Sign In
+            </span>
           </button>
         </div>
       </form>

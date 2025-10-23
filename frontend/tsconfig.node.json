@@ -1,15 +1,19 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.node.json",
-  "include": [
-    "vite.config.*",
-    "vitest.config.*",
-    "playwright.config.*",
-    "cypress.config.*",
-    "nightwatch.conf.*",
-    "vitest.config.*"
-  ],
   "compilerOptions": {
     "composite": true,
+    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
     "types": ["node"]
-  }
+  },
+  "include": [
+    "vite.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "cypress.config.ts",
+    "nightwatch.conf.ts",
+    "vitest.config.ts"
+  ]
 }

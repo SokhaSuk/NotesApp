@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NotesApi.Models;
 using NotesApi.Services;
+using System.Security.Claims;
 
 namespace NotesApi.Controllers;
 

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { NotesApi } from '@/api/notes'
-import type { Note, CreateNoteRequest, UpdateNoteRequest, NotesResponse, NoteFilters } from '@/types/note'
+import type { Note, CreateNoteRequest, UpdateNoteRequest, NotesResponse, NoteFilters, User } from '@/types/note'
 
 export const useNotesStore = defineStore('notes', () => {
   const notes = ref<Note[]>([])

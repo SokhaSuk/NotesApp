@@ -1,5 +1,6 @@
 import { httpClient } from './http'
-import type { LoginRequest, RegisterRequest, AuthResponse, User } from '@/types/user'
+import type { LoginRequest, RegisterRequest, AuthResponse } from '@/types/user'
+import type { User } from '@/types/note'
 
 export class AuthApi {
   static async login(credentials: LoginRequest): Promise<AuthResponse> {

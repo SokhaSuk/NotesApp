@@ -4,6 +4,19 @@ export interface ApiResponse<T> {
   success: boolean
 }
 
+// Backend response format (what the server actually returns)
+export interface BackendApiResponse<T> {
+  Data: T
+  Message?: string
+  Success: boolean
+}
+
+// Backend error response format
+export interface BackendErrorResponse {
+  Message: string
+  Errors?: Record<string, string[]>
+}
+
 export interface ApiError {
   message: string
   errors?: Record<string, string[]>
