@@ -1,52 +1,38 @@
-using Dapper;
-using Microsoft.Data.SqlClient;
 using NotesApi.Data;
-using NotesApi.Repositories;
-using NotesApi.Services;
+using NotesApi.Extensions;
 using NotesApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddHealthChecks();
 
-// CORS
-const string CorsPolicyName = "DefaultCors";
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:5173" };
+// Configure database
+builder.Services.AddSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")!);
+
+// Configure repositories
+builder.Services.AddRepositories();
+
+// Configure authentication
+builder.Services.AddAuthentication(builder.Configuration);
+
+// Configure CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(CorsPolicyName, policy =>
-        policy.WithOrigins(allowedOrigins)
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowAnyMethod());
+              .AllowCredentials();
+    });
 });
-
-// Dapper defaults
-DefaultTypeMap.MatchNamesWithUnderscores = true;
-
-// Data services
-builder.Services.AddSingleton(sp =>
-{
-    var configuration = sp.GetRequiredService<IConfiguration>();
-    var connectionString = configuration.GetConnectionString("DefaultConnection")
-        ?? "Server=localhost;Database=NotesApp;Trusted_Connection=True;TrustServerCertificate=True;";
-    return new SqlConnectionFactory(connectionString);
-});
-builder.Services.AddSingleton<DatabaseInitializer>();
-
-// Repositories
-builder.Services.AddScoped<INotesRepository, NotesRepository>();
-
-// User context
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IUserContext, UserContext>();
 
 var app = builder.Build();
 
-app.UseCors(CorsPolicyName);
-
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -55,15 +41,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Global exception handler
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseCors("AllowFrontend");
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.UseExceptionHandling();
 
 app.MapControllers();
-app.MapHealthChecks("/health");
-
-// Ensure database/table exist
-await app.Services.GetRequiredService<DatabaseInitializer>().EnsureCreatedAsync();
 
 app.Run();
-
-

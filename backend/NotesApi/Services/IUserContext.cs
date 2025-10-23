@@ -2,7 +2,6 @@ namespace NotesApi.Services;
 
 public interface IUserContext
 {
-    string? UserId { get; }
+    int GetUserId();
+    string GetUsername();
 }
-
-

@@ -1,93 +1,161 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NotesApi.Models;
-using NotesApi.Repositories;
 using NotesApi.Services;
 
 namespace NotesApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public sealed class NotesController : ControllerBase
+[Authorize]
+public class NotesController : ControllerBase
 {
-    private readonly INotesRepository _repository;
-    private readonly IUserContext _userContext;
+    private readonly NotesService _notesService;
 
-    public NotesController(INotesRepository repository, IUserContext userContext)
+    public NotesController(NotesService notesService)
     {
-        _repository = repository;
-        _userContext = userContext;
+        _notesService = notesService;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetNotes([FromQuery] string? search, [FromQuery] string? sortBy, [FromQuery] string? sortDir)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] string? search = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortOrder = null,
+        [FromQuery] int? page = null,
+        [FromQuery] int? pageSize = null)
     {
-        var userId = _userContext.UserId;
-        if (string.IsNullOrWhiteSpace(userId)) return Unauthorized("Missing X-User-Id header");
-        var notes = await _repository.GetNotesAsync(userId, search, sortBy, sortDir);
-        return Ok(notes.Select(n => new
+        try
         {
-            n.Id,
-            n.Title,
-            n.CreatedAt,
-            n.UpdatedAt
-        }));
+            var notes = await _notesService.GetAllAsync(search, sortBy, sortOrder, page, pageSize);
+            var totalCount = await _notesService.GetTotalCountAsync(search);
+
+            var response = new
+            {
+                notes,
+                totalCount,
+                page,
+                pageSize
+            };
+
+            return Ok(new ApiResponse<object> { Data = response });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(new ErrorResponse { Message = "Authentication required" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ErrorResponse { Message = "An error occurred retrieving notes" });
+        }
     }
 
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetNote(Guid id)
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
     {
-        var userId = _userContext.UserId;
-        if (string.IsNullOrWhiteSpace(userId)) return Unauthorized("Missing X-User-Id header");
-        var note = await _repository.GetNoteAsync(userId, id);
-        if (note is null) return NotFound();
-        return Ok(note);
-    }
+        try
+        {
+            var note = await _notesService.GetByIdAsync(id);
+            if (note == null)
+            {
+                return NotFound(new ErrorResponse { Message = "Note not found" });
+            }
 
-    public sealed record CreateNoteRequest(string Title, string? Content);
-    public sealed record UpdateNoteRequest(string Title, string? Content);
+            return Ok(new ApiResponse<Note> { Data = note });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(new ErrorResponse { Message = "Authentication required" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ErrorResponse { Message = "An error occurred retrieving the note" });
+        }
+    }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateNoteRequest request)
     {
-        var userId = _userContext.UserId;
-        if (string.IsNullOrWhiteSpace(userId)) return Unauthorized("Missing X-User-Id header");
-        if (string.IsNullOrWhiteSpace(request.Title)) return BadRequest("Title is required");
-
-        var note = new Note
+        try
         {
-            UserId = userId,
-            Title = request.Title,
-            Content = string.IsNullOrWhiteSpace(request.Content) ? null : request.Content
-        };
-        var created = await _repository.CreateNoteAsync(note);
-        return CreatedAtAction(nameof(GetNote), new { id = created.Id }, created);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Message = "Invalid request data",
+                    Errors = ModelState.ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                    )
+                });
+            }
+
+            var note = await _notesService.CreateAsync(request);
+            return CreatedAtAction(nameof(GetById), new { id = note.Id }, new ApiResponse<Note> { Data = note });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(new ErrorResponse { Message = "Authentication required" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ErrorResponse { Message = "An error occurred creating the note" });
+        }
     }
 
-    [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateNoteRequest request)
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateNoteRequest request)
     {
-        var userId = _userContext.UserId;
-        if (string.IsNullOrWhiteSpace(userId)) return Unauthorized("Missing X-User-Id header");
-        if (string.IsNullOrWhiteSpace(request.Title)) return BadRequest("Title is required");
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Message = "Invalid request data",
+                    Errors = ModelState.ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                    )
+                });
+            }
 
-        var existing = await _repository.GetNoteAsync(userId, id);
-        if (existing is null) return NotFound();
-        existing.Title = request.Title;
-        existing.Content = string.IsNullOrWhiteSpace(request.Content) ? null : request.Content;
-        var ok = await _repository.UpdateNoteAsync(existing);
-        if (!ok) return NotFound();
-        return Ok(existing);
+            var note = await _notesService.UpdateAsync(id, request);
+            return Ok(new ApiResponse<Note> { Data = note });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new ErrorResponse { Message = "Note not found" });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(new ErrorResponse { Message = "Authentication required" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ErrorResponse { Message = "An error occurred updating the note" });
+        }
     }
 
-    [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id)
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
     {
-        var userId = _userContext.UserId;
-        if (string.IsNullOrWhiteSpace(userId)) return Unauthorized("Missing X-User-Id header");
-        var ok = await _repository.DeleteNoteAsync(userId, id);
-        if (!ok) return NotFound();
-        return NoContent();
+        try
+        {
+            await _notesService.DeleteAsync(id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new ErrorResponse { Message = "Note not found" });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(new ErrorResponse { Message = "Authentication required" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ErrorResponse { Message = "An error occurred deleting the note" });
+        }
     }
 }
-
-

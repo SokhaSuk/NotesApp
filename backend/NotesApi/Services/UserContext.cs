@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace NotesApi.Services;
 
-public sealed class UserContext : IUserContext
+public class UserContext : IUserContext
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
 
@@ -11,19 +11,19 @@ public sealed class UserContext : IUserContext
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public string? UserId
+    public int GetUserId()
     {
-        get
+        var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
         {
-            var context = _httpContextAccessor.HttpContext;
-            if (context is null) return null;
-            if (context.Request.Headers.TryGetValue("X-User-Id", out var values))
-            {
-                return values.FirstOrDefault();
-            }
-            return null;
+            throw new UnauthorizedAccessException("User ID not found in token");
         }
+        return userId;
+    }
+
+    public string GetUsername()
+    {
+        var usernameClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Name);
+        return usernameClaim?.Value ?? throw new UnauthorizedAccessException("Username not found in token");
     }
 }
-
-

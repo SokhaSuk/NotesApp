@@ -4,11 +4,10 @@ namespace NotesApi.Repositories;
 
 public interface INotesRepository
 {
-    Task<IEnumerable<Note>> GetNotesAsync(string userId, string? search, string? sortBy, string? sortDir);
-    Task<Note?> GetNoteAsync(string userId, Guid id);
-    Task<Note> CreateNoteAsync(Note note);
-    Task<bool> UpdateNoteAsync(Note note);
-    Task<bool> DeleteNoteAsync(string userId, Guid id);
+    Task<IEnumerable<Note>> GetAllAsync(int userId, string? search = null, string? sortBy = null, string? sortOrder = null, int? page = null, int? pageSize = null);
+    Task<Note?> GetByIdAsync(int id, int userId);
+    Task<Note> CreateAsync(Note note);
+    Task<Note> UpdateAsync(Note note);
+    Task DeleteAsync(int id, int userId);
+    Task<int> GetTotalCountAsync(int userId, string? search = null);
 }
-
-

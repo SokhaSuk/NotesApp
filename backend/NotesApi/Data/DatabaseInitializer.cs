@@ -1,8 +1,9 @@
 using Dapper;
+using System.Data.SqlClient;
 
 namespace NotesApi.Data;
 
-public sealed class DatabaseInitializer
+public class DatabaseInitializer
 {
     private readonly SqlConnectionFactory _connectionFactory;
 
@@ -11,27 +12,30 @@ public sealed class DatabaseInitializer
         _connectionFactory = connectionFactory;
     }
 
-    public async Task EnsureCreatedAsync()
+    public async Task InitializeAsync()
     {
-        const string createTableSql = @"
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Notes]') AND type in (N'U'))
-BEGIN
-    CREATE TABLE [dbo].[Notes](
-        [Id] UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
-        [UserId] NVARCHAR(200) NOT NULL,
-        [Title] NVARCHAR(200) NOT NULL,
-        [Content] NVARCHAR(MAX) NULL,
-        [CreatedAt] DATETIME2 NOT NULL,
-        [UpdatedAt] DATETIME2 NOT NULL
-    );
-    CREATE INDEX IX_Notes_UserId_CreatedAt ON [dbo].[Notes] ([UserId], [CreatedAt] DESC);
-END
-";
+        using var connection = _connectionFactory.CreateConnection();
 
-        await using var connection = _connectionFactory.CreateConnection();
-        await connection.OpenAsync();
-        await connection.ExecuteAsync(createTableSql);
+        await connection.ExecuteAsync(@"
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Users' AND xtype='U')
+            CREATE TABLE Users (
+                Id INT IDENTITY(1,1) PRIMARY KEY,
+                Username NVARCHAR(50) NOT NULL UNIQUE,
+                Email NVARCHAR(100) NOT NULL UNIQUE,
+                PasswordHash NVARCHAR(255) NOT NULL,
+                CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+            )");
+
+        await connection.ExecuteAsync(@"
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Notes' AND xtype='U')
+            CREATE TABLE Notes (
+                Id INT IDENTITY(1,1) PRIMARY KEY,
+                Title NVARCHAR(200) NOT NULL,
+                Content NVARCHAR(MAX),
+                CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                UserId INT NOT NULL,
+                FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
+            )");
     }
 }
-
-

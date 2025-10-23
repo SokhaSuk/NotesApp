@@ -1,8 +1,8 @@
-using Microsoft.Data.SqlClient;
+using System.Data.SqlClient;
 
 namespace NotesApi.Data;
 
-public sealed class SqlConnectionFactory
+public class SqlConnectionFactory
 {
     private readonly string _connectionString;
 
@@ -16,5 +16,3 @@ public sealed class SqlConnectionFactory
         return new SqlConnection(_connectionString);
     }
 }
-
-

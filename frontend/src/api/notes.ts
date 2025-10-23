@@ -1,26 +1,37 @@
-import { http } from '@/api/http';
-import type { Note, NoteCreateRequest, NoteUpdateRequest } from '@/types/note';
+import { httpClient } from './http'
+import type { Note, CreateNoteRequest, UpdateNoteRequest, NotesResponse, NoteFilters } from '@/types/note'
 
-export async function listNotes(params?: { search?: string; sortBy?: 'title' | 'createdAt' | 'updatedAt'; sortDir?: 'asc' | 'desc'; }): Promise<Pick<Note, 'id' | 'title' | 'createdAt' | 'updatedAt'>[]> {
-    const { data } = await http.get('/notes', { params });
-    return data;
-}
+export class NotesApi {
+  static async getNotes(filters?: NoteFilters): Promise<NotesResponse> {
+    const params = new URLSearchParams()
 
-export async function getNote(id: string): Promise<Note> {
-    const { data } = await http.get(`/notes/${id}`);
-    return data;
-}
+    if (filters?.search) params.append('search', filters.search)
+    if (filters?.sortBy) params.append('sortBy', filters.sortBy)
+    if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder)
+    if (filters?.page) params.append('page', filters.page.toString())
+    if (filters?.pageSize) params.append('pageSize', filters.pageSize.toString())
 
-export async function createNote(payload: NoteCreateRequest): Promise<Note> {
-    const { data } = await http.post('/notes', payload);
-    return data;
-}
+    const query = params.toString()
+    const response = await httpClient.get<NotesResponse>(`/notes${query ? `?${query}` : ''}`)
+    return response.data
+  }
 
-export async function updateNote(id: string, payload: NoteUpdateRequest): Promise<Note> {
-    const { data } = await http.put(`/notes/${id}`, payload);
-    return data;
-} 
+  static async getNote(id: number): Promise<Note> {
+    const response = await httpClient.get<Note>(`/notes/${id}`)
+    return response.data
+  }
 
-export async function deleteNote(id: string): Promise<void> {
-    await http.delete(`/notes/${id}`);
+  static async createNote(note: CreateNoteRequest): Promise<Note> {
+    const response = await httpClient.post<Note>('/notes', note)
+    return response.data
+  }
+
+  static async updateNote(id: number, note: UpdateNoteRequest): Promise<Note> {
+    const response = await httpClient.put<Note>(`/notes/${id}`, note)
+    return response.data
+  }
+
+  static async deleteNote(id: number): Promise<void> {
+    await httpClient.delete(`/notes/${id}`)
+  }
 }
