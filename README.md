@@ -25,7 +25,7 @@ A complete full-stack notes management application built with Vue.js + TypeScrip
 - 🔍 Search and filtering capabilities
 - 📊 Pagination support
 - 🏗️ Clean Architecture with Repository pattern
-- 🗄️ SQL Server with Dapper ORM
+- 🗄️ SQLite with Dapper (micro ORM)
 
 ## 🛠️ Tech Stack
 
@@ -42,7 +42,7 @@ A complete full-stack notes management application built with Vue.js + TypeScrip
 ### Backend
 - **Framework**: ASP.NET Core Web API
 - **Language**: C#
-- **Database**: SQL Server
+- **Database**: SQLite (file-based)
 - **ORM**: Dapper (micro ORM)
 - **Authentication**: JWT Bearer tokens
 - **Architecture**: Clean Architecture
@@ -90,20 +90,18 @@ When you run the Notes App, you'll be greeted with:
 ### Prerequisites
 - Node.js (v18 or higher)
 - .NET 8.0 SDK or later
-- SQL Server (LocalDB, Express, or full edition)
+- **SQLite** (built-in, no installation required)
+- **Optional:** SQL Server (if you prefer SQL Server over SQLite)
 
 ### 1. Database Setup
 
-Run the database setup script:
-```bash
-# In SQL Server Management Studio or Azure Data Studio
-# Execute the contents of backend/database-setup.sql
-```
+**No setup required!** The application uses SQLite which automatically creates the database file when first run.
 
-Or manually create the database:
-```sql
-CREATE DATABASE NotesDb;
-```
+The database file (`notes.db`) will be created automatically in the `backend/NotesApi/` directory with the following tables:
+- `Users` - User accounts and authentication
+- `Notes` - User notes with foreign key relationships
+
+**Optional:** If you want to use SQL Server instead, execute `backend/database-setup.sql` in SQL Server Management Studio.
 
 ### 2. Backend Setup
 
@@ -122,6 +120,8 @@ The API will be available at:
 - HTTP: http://localhost:5000
 - HTTPS: https://localhost:5001
 - Swagger UI: http://localhost:5000/swagger
+
+**Database:** SQLite database file (`notes.db`) will be created automatically with proper schema and indexes.
 
 ### 3. Frontend Setup
 
@@ -148,16 +148,25 @@ Update `backend/NotesApi/appsettings.json`:
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=NotesDb;Trusted_Connection=True;TrustServerCertificate=True;"
+    "DefaultConnection": "Data Source=notes.db"
   },
   "Jwt": {
-    "Key": "YourSuperSecretKeyThatIsAtLeast32CharactersLong123456789",
+    "Key": "DEVELOPMENT_KEY_CHANGE_IN_PRODUCTION_32_CHARS_MIN",
     "Issuer": "NotesApi",
     "Audience": "NotesApp",
     "ExpireMinutes": 60
-  }
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "localhost,127.0.0.1"
 }
 ```
+
+> 🔐 **Security Note:** The JWT key is set to a development placeholder. For production, use a strong random key (min 256 bits) and consider using environment variables.
 
 ### Frontend Configuration
 
@@ -280,6 +289,27 @@ dotnet test        # Run tests (when added)
 4. Test search and filtering
 5. Verify responsive design on different screen sizes
 
+## 🔐 Security
+
+This project follows security best practices for development:
+
+- ✅ **JWT Authentication** with secure token validation
+- ✅ **BCrypt Password Hashing** for secure password storage
+- ✅ **CORS Protection** restricted to development origins
+- ✅ **Input Validation** on both frontend and backend
+- ✅ **SQL Injection Prevention** using parameterized queries
+- ✅ **Environment Variables** recommended for production secrets
+
+### Production Security Checklist
+- [ ] Use strong, random JWT secret (256-bit minimum)
+- [ ] Configure environment variables for sensitive data
+- [ ] Set proper CORS origins (no wildcards)
+- [ ] Implement rate limiting for authentication
+- [ ] Use HTTPS only in production
+- [ ] Regular security updates and monitoring
+
+📖 **Complete security guide:** See `SECURITY_GUIDE.md` for detailed security considerations and GitHub publishing safety.
+
 ## 🚀 Deployment
 
 ### Frontend Deployment
@@ -298,11 +328,15 @@ dotnet publish -c Release -o publish
 ```
 
 ### Production Considerations
-- Update JWT secret key
-- Configure production database
-- Set up proper CORS origins
-- Configure logging levels
-- Set up SSL certificates
+- **Generate strong JWT secret** (256-bit random key)
+- **Use environment variables** for sensitive configuration
+- **Configure production database** (PostgreSQL, SQL Server, or MySQL recommended)
+- **Set proper CORS origins** (no wildcards in production)
+- **Configure logging levels** (Warning or Error for production)
+- **Set up SSL certificates** (HTTPS required)
+- **Implement rate limiting** for authentication endpoints
+
+📖 **Security:** See `SECURITY_GUIDE.md` for complete security checklist and GitHub publishing safety.
 
 ## 🐛 Troubleshooting
 
